@@ -3,9 +3,39 @@ from bluepy import btle
 import logging
 import math
 from .publishMqtt import publishMqtt as publish
+from struct import unpack
+import paho.mqtt.publish as publishToMqtt
 
-from .jkbmsdecode import crc8, decodeHex
+from .jkbmsdecode import crc8, Hex2Str,LittleHex2Short, Hex2Int, LittleHex2UInt, LittleHex2Int, uptime
 
+class hexdump:
+    def __init__(self, buf, off=0):
+        self.buf = buf
+        self.off = off
+
+    def __iter__(self):
+        last_bs, last_line = None, None
+        for i in range(0, len(self.buf), 16):
+            bs = bytearray(self.buf[i : i + 16])
+            line = "{:08x}  {:23}  {:23}  |{:16}|".format(
+                self.off + i,
+                " ".join(("{:02x}".format(x) for x in bs[:8])),
+                " ".join(("{:02x}".format(x) for x in bs[8:])),
+                "".join((chr(x) if 32 <= x < 127 else "." for x in bs)),
+            )
+            if bs == last_bs:
+                line = "*"
+            if bs != last_bs or line != last_line:
+                yield line
+            last_bs, last_line = bs, line
+        yield "{:08x}".format(self.off + len(self.buf))
+
+    def __str__(self):
+        return "\n".join(self)
+
+    def __repr__(self):
+        return "\n".join(self)
+    
 EXTENDED_RECORD = 1
 CELL_DATA = 2
 INFO_RECORD = 3
@@ -13,43 +43,189 @@ INFO_RECORD = 3
 getInfo = b'\xaa\x55\x90\xeb\x97\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11'
 getCellInfo = b'\xaa\x55\x90\xeb\x96\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10'
 
+InfoResponseMapping = [
+    ["Hex2Str", 4, "Header", ""],
+    ["Hex2Str", 1, "Record Type", ""],
+    ["Hex2Int", 1, "Record Counter", ""],
+    ["Hex2Ascii", 16, "Device Model", ""],
+    ["Hex2Ascii", 8, "Hardware Version", ""],
+    ["Hex2Ascii", 8, "Software Version", ""],
+    ["uptime", 4, "Up Time", ""],
+    ["Hex2Int", 4, "Power-on Times", ""],
+    ["Hex2Ascii", 16, "Device Name", ""],
+    ["Hex2Ascii", 16, "Device Passcode", ""],
+    ["Hex2Ascii", 8, "Manufacturing Date", ""],
+    ["Hex2Ascii", 11, "Serial Number", ""],
+    ["Hex2Ascii", 5, "Passcode", ""],
+    ["Hex2Ascii", 16, "User Data", ""],
+    ["Hex2Ascii", 16, "Setup Passcode", ""],
+    ["discard", 672, "unknown", ""],
+]
+
+CellInfoResponseMapping = [
+    ("Hex2Str", 4, "Header", ""),
+    ("Hex2Str", 1, "Record_Type", ""),
+    ("Hex2Int", 1, "Record_Counter", ""),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell01", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell02", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell03", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell04", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell05", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell06", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell07", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell08", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell09", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell10", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell11", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell12", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell13", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell14", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell15", "V"),
+    ("LittleHex2Short:r/1000", 2, "VoltageCell16", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell17", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell18", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell19", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell20", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell21", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell22", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell23", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell24", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell25", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell26", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell27", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell28", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell29", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell30", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell31", "V"),
+    ("LittleHex2Short:r/1000", 2, "-VoltageCell32", "V"),
+    ("Hex2Str", 4, "EnabledCellsBitmask", ""), #0xFF000000 => 8 cells, 0xFF010000 => 9 cells, ..., 0xFFFF0000 => 16cells
+    ("LittleHex2Short:r/1000", 2, "AverageCellVoltage", "V"),
+    ("LittleHex2Short:r/1000", 2, "DeltaCellVoltage", "V"),
+    ("LittleHex2Short:r/1000", 2, "CurrentBalancer", "A"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell01", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell02", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell03", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell04", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell05", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell06", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell07", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell08", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell09", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell10", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell11", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell12", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell13", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell14", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell15", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "ResistanceCell16", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell17", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell18", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell19", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell20", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell21", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell22", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell23", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell24", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell25", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell26", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell27", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell28", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell29", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell30", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell31", "Ohm"),
+    ("LittleHex2Short:r/1000", 2, "-ResistanceCell32", "Ohm"),
+    ("Hex2Str", 6, "-discard2", ""),
+    ("LittleHex2UInt:r/1000", 4, "BatteryVoltage", "V"),
+    ("LittleHex2UInt:r/1000", 4, "BatteryPower", "W"),
+    ("LittleHex2Int:r/1000", 4, "BalanceCurrent", "A"),  # signed int32
+    # ("discard", 8, "discard3", ""),
+    ("LittleHex2Short:r/10", 2, "BatteryT1", "°C"),
+    ("LittleHex2Short:r/10", 2, "BatteryT2", "°C"),
+    ("LittleHex2Short:r/10", 2, "MOSTemp", "°C"),
+    ("Hex2Str", 2, "-Unknown3", ""), #0x0001 charge overtemp, 0x0002 charge undertemp. 0x0008 cell undervoltage, 0x0400 cell count error, 0x0800 current sensor anomaly, 0x1000 cell overvoltage
+    ("Hex2Str", 2, "-discard4", ""),  # discard4
+    ("Hex2Str", 1, "-discard4_1", ""),  # added
+    ("Hex2Int", 1, "Percent_Remain", "%"),
+    ("LittleHex2UInt:r/1000", 4, "CapacityRemain", "Ah"),  # Unknown6+7
+    ("LittleHex2UInt:r/1000", 4, "NominalCapacity", "Ah"),  # Unknown8+9
+    ("LittleHex2UInt", 4, "CycleCount", ""),
+    # ("discard", 2, "Unknown10", ""),
+    # ("discard", 2, "Unknown11", ""),
+    ("LittleHex2UInt:r/1000", 4, "CycleCapacity", "Ah"),  # Unknown10+11
+    ("Hex2Str", 2, "-Unknown12", ""),
+    ("Hex2Str", 2, "-Unknown13", ""),
+    ("uptime", 3, "Time", ""),
+    ("Hex2Str", 2, "-Unknown15", ""),
+    ("Hex2Str", 2, "-Unknown16", ""),
+    ("Hex2Str", 2, "-Unknown17", ""),
+    ("Hex2Str", 12, "-discard6", ""),
+    ("Hex2Str", 2, "-Unknown18", ""),
+    ("Hex2Str", 2, "-Unknown19", ""),
+    ("Hex2Str", 2, "-Unknown20", ""),
+    ("LittleHex2Short:r/1000", 2, "CurrentCharge", "A"),  # Unknown21
+    ("LittleHex2Short:r/1000", 2, "CurrentDischarge", "A"),  # Unknown22
+    ("Hex2Str", 2, "-Unknown23", ""),
+    ("Hex2Str", 2, "-Unknown24", ""),
+    ("Hex2Str", 2, "-Unknown25", ""),
+    ("Hex2Str", 2, "-Unknown26", ""),
+    ("Hex2Str", 2, "-Unknown27", ""),
+    ("Hex2Str", 2, "-Unknown28", ""),
+    ("Hex2Str", 2, "-Unknown29", ""),
+    ("Hex2Str", 4, "-Unknown30", ""),
+    ("Hex2Str", 4, "-Unknown31", ""),
+    ("Hex2Str", 4, "-Unknown32", ""),
+    ("Hex2Str", 4, "-Unknown33", ""),
+    ("Hex2Str", 4, "-Unknown34", ""),
+    ("Hex2Str", 4, "-Unknown35", ""),
+    ("Hex2Str", 4, "-Unknown36", ""),
+    ("Hex2Str", 4, "-Unknown37", ""),
+    ("Hex2Str", 4, "-Unknown38", ""),
+    ("Hex2Str", 4, "-Unknown39", ""),
+    ("Hex2Str", 4, "-Unknown40", ""),
+    ("Hex2Str", 4, "-Unknown41", ""),
+    ("discard", 45, "-UnknownXX", ""),
+]
+
 log = logging.getLogger('JKBMS-BT')
 
+SOR = bytes.fromhex("55aaeb90")
 
 class jkBmsDelegate(btle.DefaultDelegate):
     '''
     BLE delegate to deal with notifications (information) from the JKBMS device
     '''
-
+    # JSBMS hat bei getCellInfo 0x02 und bei getInfo 0x03
     def __init__(self, jkbms):
         btle.DefaultDelegate.__init__(self)
         # extra initialisation here
         self.jkbms = jkbms
         print('Delegate {}'.format(str(jkbms)))
         self.notificationData = bytearray()
+        self.record_type = None
 
-    def recordIsComplete(self):
-        '''
-        '''
-        # print('Notification Data {}'.format(self.notificationData))
-        # check for 'ack' record
-        if self.notificationData.startswith(bytes.fromhex('aa5590eb')):
-            log.info('notificationData has ACK')
-            self.notificationData = bytearray()
-            return False  # strictly record is complete, but we dont process this
+
+    def is_record_start(self, record):
+        if record.startswith(SOR):
+#            log.debug("SOR found in record")
+            return True
+        return False
+
+    def recordIsComplete(self, record):
+        """"""
         # check record starts with 'SOR'
-        SOR = bytes.fromhex('55aaeb90')
-        if not self.notificationData.startswith(SOR):
-            log.info('No SOR found in notificationData')
+        if not self.is_record_start(self.notificationData):
             self.notificationData = bytearray()
+            log.debug("No SOR found in record looking for completeness")
             return False
         # check that length one of the valid lengths (300, 320)
-        if len(self.notificationData) == 300 or len(self.notificationData) == 320:
+        if len(self.notificationData) == 100 or len(self.notificationData) >= 300:
             # check the crc/checksum is correct for the record data
             crc = ord(self.notificationData[-1:])
             calcCrc = crc8(self.notificationData[:-1])
-            # print (crc, calcCrc)
+            print (crc, calcCrc, "len ", len(self.notificationData))
+            print(hexdump(self.notificationData))
             if crc == calcCrc:
+                log.debug("Record CRC is valid")
                 return True
         return False
 
@@ -176,42 +352,69 @@ class jkBmsDelegate(btle.DefaultDelegate):
         counter = record.pop(0)
         log.info('Record number: {}'.format(counter))
 
+
+    def processField(self,record,fmt,bytes,name,unit):
+        value = None
+        if fmt == "Hex2Str":
+            value = Hex2Str(record[0:bytes])
+        elif fmt == "LittleHex2Short:r/1000":
+            value =LittleHex2Short(record[0:bytes])/1000
+        elif fmt == "LittleHex2Short:r/10":
+            value =LittleHex2Short(record[0:bytes])/10
+        elif fmt == "Hex2Int":
+            value = Hex2Int(record[0:bytes])
+        elif fmt == "LittleHex2UInt":
+            value = LittleHex2UInt(record[0:bytes])
+        elif fmt == "LittleHex2UInt:r/1000":
+            value = LittleHex2UInt(record[0:bytes])/1000
+        elif fmt == "LittleHex2Int:r/1000":
+            value = LittleHex2Int(record[0:bytes])/1000
+        elif fmt == "uptime":
+            value = uptime(record[0:bytes])
+        else:
+            log.warn('Unknown format {}'.format(fmt))
+
+        msgs = []
+        topic = self.jkbms.tag+'/'+name+'/value'
+        if(type(value) is int):
+            log.info('{}: {:02d}{}'.format(name, value, unit))
+            msgs.append( {'topic': topic, 'payload': '{:02d}'.format(value)} )
+#            msgs.append(publish({'{:02d}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
+        elif(type(value) is float):
+            msgs.append( {'topic': topic, 'payload': '{:.3f}'.format(value)} )
+            log.info('{}: {:.3f}{}'.format(name, value, unit))
+#            msgs.append(publish({'{:.3f}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
+        elif(type(value) is str):
+            msgs.append( {'topic': topic, 'payload': '{}'.format(value)} )
+            log.info('{}: {}{}'.format(name, value, unit))
+#            msgs.append(publish({'{}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
+        
+        if(len(msgs)>0):
+            topic = self.jkbms.tag+'/'+name+'/unit'
+            msgs.append( {'topic': topic, 'payload': '{}'.format(unit)} )
+#            msgs.append(publish({'{}'.format(unit)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
+
+        if(name[0]!='-'):
+            return msgs
+        else:
+            return []
+
+
     def processCellDataRecord(self, record):
         log.info('Processing cell data record')
         log.info('Record length {}'.format(len(record)))
-        del record[0:5]
-        counter = record.pop(0)
-        log.info('Record number: {}'.format(counter))
-        # Process cell voltages
-        volts = []
-        size = 4
-        number = 24
-        for i in range(0, number):
-            volts.append(record[0:size])
-            del record[0:size]
-        log.debug('Volts: {}'.format(volts))
-        _totalvolt = 0
-        for cell, volt in enumerate(volts):
-            _volt = float(decodeHex(volt))
-            log.info('Cell: {:02d}, Volts: {:.4f}'.format(cell + 1, _volt))
-            publish({'VoltageCell{:02d}'.format(cell + 1): _volt}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-            _totalvolt += _volt
-        publish({'VoltageTotal': _totalvolt}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        # Process cell wire resistances
-        # print (record)
-        log.info('Processing wire resistances')
-        resistances = []
-        size = 4
-        number = 25
-        for i in range(0, number):
-            resistances.append(record[0:size])
-            del record[0:size]
-        for cell, resistance in enumerate(resistances):
-            log.info('Cell: {:02d}, Resistance: {:.4f}'.format(cell, decodeHex(resistance)))
-            publish({'ResistanceCell{:02d}'.format(cell): float(decodeHex(resistance))}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        # print (record)
+        msgs = []
+        for fmt,bytes,name,unit in CellInfoResponseMapping:
+            msgs += self.processField(record,fmt,bytes,name,unit)
+            del record[0:bytes]
+
+        print(msgs)
+        publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
+
+
 
     def processRecord(self, record):
+        print("processRecord")
         recordType = record[4]
         # counter = record[5]
         if recordType == INFO_RECORD:
@@ -226,12 +429,41 @@ class jkBmsDelegate(btle.DefaultDelegate):
     def handleNotification(self, handle, data):
         # handle is the handle of the characteristic / descriptor that posted the notification
         # data is the data in this notification - may take multiple notifications to get all of a message
-        log.debug('From handle: {:#04x} Got {} bytes of data'.format(handle, len(data)))
+        log.debug("From handle: {:#04x} Got {} bytes of data".format(handle, len(data)))
         self.notificationData += bytearray(data)
-        if self.recordIsComplete():
-            record = self.notificationData
+        log.debug(f"Pre wipe to start {self.notificationData}")
+        self.notificationData = self.wipe_to_start(self.notificationData)
+        log.debug(f"Post wipe to start {self.notificationData}")
+        # if not self._protocol.is_record_start(self.notificationData):
+        #     log.debug(f"Not valid start of record - wiping data {self.notificationData}")
+        #     self.notificationData = bytearray()
+        if not self.is_record_correct_type(
+            self.notificationData, self.record_type
+        ):
+            log.debug(
+                f"Not expected type of record - wiping data {self.notificationData}"
+            )
             self.notificationData = bytearray()
-            self.processRecord(record)
+        if self.recordIsComplete(self.notificationData):
+            self.jkbms.record = self.notificationData
+            log.debug("record complete")
+            self.notificationData = bytearray()
+            self.processRecord(self.jkbms.record)
+
+    def wipe_to_start(self, record):
+        sor_loc = record.find(SOR)
+        if sor_loc == -1:
+            log.debug("SOR not found in record")
+            return bytearray()
+        return record[sor_loc:]
+    
+    def is_record_correct_type(self, record, type):
+        if len(record) < len(SOR):
+            return False
+        if record[len(SOR)] == int(type):
+            log.debug(f"Record is type {type}")
+            return True
+        return False
 
 
 class jkBMS:
@@ -266,7 +498,8 @@ class jkBMS:
     def connect(self):
         # Intialise BLE device
         self.device = btle.Peripheral(None)
-        self.device.withDelegate(jkBmsDelegate(self))
+        self.delegate = jkBmsDelegate(self)
+        self.device.withDelegate(self.delegate)
         # Connect to BLE Device
         connected = False
         attempts = 0
@@ -278,10 +511,12 @@ class jkBMS:
                 return connected
             try:
                 self.device.connect(self.mac)
+                self.device.setMTU(330)
                 connected = True
             except Exception:
                 continue
         return connected
+    
 
     def getBLEData(self):
         # Get the device name
@@ -295,7 +530,7 @@ class jkBMS:
 
         # Get the handles that we need to talk to
         # Read
-        characteristicReadUuid = 'ffe3'
+        characteristicReadUuid = 'ffe1' # Grypho: Adopted to newer BMS systems
         characteristicRead = serviceNotify.getCharacteristics(characteristicReadUuid)[0]
         handleRead = characteristicRead.getHandle()
         log.info('Read characteristic: {}, handle {:x}'.format(characteristicRead, handleRead))
@@ -304,6 +539,7 @@ class jkBMS:
         # Need to dynamically find this handle....
         log.info('Enable 0x0b handle', self.device.writeCharacteristic(0x0b, b'\x01\x00'))
         log.info('Enable read handle', self.device.writeCharacteristic(handleRead, b'\x01\x00'))
+        self.delegate.record_type = 0x03
         log.info('Write getInfo to read handle', self.device.writeCharacteristic(handleRead, getInfo))
         secs = 0
         while True:
@@ -313,6 +549,7 @@ class jkBMS:
             if secs > 5:
                 break
 
+        self.delegate.record_type = 0x02
         log.info('Write getCellInfo to read handle', self.device.writeCharacteristic(handleRead, getCellInfo))
         loops = 0
         recordsToGrab = self.records

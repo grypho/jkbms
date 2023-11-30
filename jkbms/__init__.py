@@ -5,7 +5,6 @@ import sys
 
 from argparse import ArgumentParser
 
-from .jkbmsdecode import decodeHex
 from .version import __version__  # noqa: F401
 from .jkbms import jkBMS
 
