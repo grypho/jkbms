@@ -47,7 +47,7 @@ def main():
         help="Just print the results, dont try to send to the MQTT Broker",
     )
     parser.add_argument(
-        "-r", "--records", help="Number of records to get from the BMS", default="1"
+        "-r", "--records", help="Number of records to get from the BMS"
     )
     parser.add_argument(
         "-x", "--decodeHex", help="Hex to decode (will not communicate to BMS)"
@@ -90,6 +90,7 @@ def main():
             sections = config.sections()
             if "SETUP" in config:
                 mqtt_broker = config["SETUP"].get("mqtt_broker", fallback=None)
+                records = config["SETUP"].getint("records", fallback=1)
                 logging_level = config["SETUP"].getint(
                     "logging_level", fallback=logging.CRITICAL
                 )
@@ -111,6 +112,8 @@ def main():
             mqtt_broker = args.mqttBroker
         if args.printResultsOnly:
             mqtt_broker = None
+        if args.records:
+            records = args.records
         if args.name:
             print(
                 "Looking for a section named {} in {}".format(
@@ -138,7 +141,7 @@ def main():
                 command=command,
                 tag=tag,
                 format=format,
-                records=args.records,
+                records=records,
                 maxConnectionAttempts=max_connection_attempts,
                 mqttBroker=mqtt_broker,
             )

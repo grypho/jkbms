@@ -148,7 +148,7 @@ class jkBmsDelegate(btle.DefaultDelegate):
             msgs += self.processField(record,fmt,bytes,"CellData",name,unit)
             del record[0:bytes]
 
-        print(msgs)
+        log.debug(msgs)
         publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
 
     def processInfoRecord(self, record):
@@ -159,12 +159,11 @@ class jkBmsDelegate(btle.DefaultDelegate):
             msgs += self.processField(record,fmt,bytes,"Info",name,unit)
             del record[0:bytes]
 
-        print(msgs)
+        log.debug(msgs)
         publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
 
 
     def processRecord(self, record):
-        print("processRecord")
         recordType = record[4]
         # counter = record[5]
         if recordType == INFO_RECORD:
@@ -307,8 +306,8 @@ class jkBMS:
 
         while True:
             loops += 1
-            if loops > recordsToGrab * 15 + 16:
-                print('Got {} records'.format(recordsToGrab))
+            if loops > recordsToGrab:
+                log.info('Got {} records'.format(recordsToGrab))
                 break
             if self.device.waitForNotifications(1.0):
                 continue
