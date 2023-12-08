@@ -6,7 +6,7 @@ from .publishMqtt import publishMqtt as publish
 from struct import unpack
 import paho.mqtt.publish as publishToMqtt
 
-from .jkbmsdecode import crc8, Hex2Str,LittleHex2Short, Hex2Int, LittleHex2UInt, LittleHex2Int, uptime
+from .jkbmsdecode import DATA_ASCII, DATA_INT16, DATA_INT16_DIV10, DATA_INT32_DIV1000, DATA_UINT16, DATA_UINT16_DIV1000, DATA_UINT32, DATA_UINT32_DIV1000, DATA_UINT8, DecodeFormat, Hex2Ascii, crc8, Hex2Str, Hex2Int, LittleHex2UInt, LittleHex2Int, uptime
 
 class hexdump:
     def __init__(self, buf, off=0):
@@ -44,145 +44,145 @@ getInfo = b'\xaa\x55\x90\xeb\x97\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
 getCellInfo = b'\xaa\x55\x90\xeb\x96\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10'
 
 InfoResponseMapping = [
-    ["Hex2Str", 4, "Header", ""],
-    ["Hex2Str", 1, "Record Type", ""],
-    ["Hex2Int", 1, "Record Counter", ""],
-    ["Hex2Ascii", 16, "Device Model", ""],
-    ["Hex2Ascii", 8, "Hardware Version", ""],
-    ["Hex2Ascii", 8, "Software Version", ""],
-    ["uptime", 4, "Up Time", ""],
-    ["Hex2Int", 4, "Power-on Times", ""],
-    ["Hex2Ascii", 16, "Device Name", ""],
-    ["Hex2Ascii", 16, "Device Passcode", ""],
-    ["Hex2Ascii", 8, "Manufacturing Date", ""],
-    ["Hex2Ascii", 11, "Serial Number", ""],
-    ["Hex2Ascii", 5, "Passcode", ""],
-    ["Hex2Ascii", 16, "User Data", ""],
-    ["Hex2Ascii", 16, "Setup Passcode", ""],
+    ["Hex2Str", 4, "-Header", ""],
+    ["Hex2Str", 1, "-Record Type", ""],
+    [DATA_UINT8, 1, "RecordCounter", ""],
+    [DATA_ASCII, 16, "DeviceModel", ""],
+    [DATA_ASCII, 8, "HardwareVersion", ""],
+    [DATA_ASCII, 8, "SoftwareVersion", ""],
+    ["uptime", 4, "Uptime", "s"],
+    [DATA_UINT32, 4, "PowerOnTimes", ""],
+    [DATA_ASCII, 16, "DeviceName", ""],
+    [DATA_ASCII, 16, "-DevicePasscode", ""],
+    [DATA_ASCII, 8, "ManufacturingDate", ""],
+    [DATA_ASCII, 11, "SerialNumber", ""],
+    [DATA_ASCII, 5, "-Passcode", ""],
+    [DATA_ASCII, 16, "-UserData", ""],
+    [DATA_ASCII, 16, "-Setup Passcode", ""],
     ["discard", 672, "unknown", ""],
 ]
 
 CellInfoResponseMapping = [
-    ("Hex2Str", 4, "Header", ""),
-    ("Hex2Str", 1, "Record_Type", ""),
-    ("Hex2Int", 1, "Record_Counter", ""),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell01", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell02", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell03", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell04", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell05", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell06", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell07", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell08", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell09", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell10", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell11", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell12", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell13", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell14", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell15", "V"),
-    ("LittleHex2Short:r/1000", 2, "VoltageCell16", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell17", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell18", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell19", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell20", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell21", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell22", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell23", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell24", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell25", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell26", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell27", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell28", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell29", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell30", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell31", "V"),
-    ("LittleHex2Short:r/1000", 2, "-VoltageCell32", "V"),
+    ("Hex2Str", 4, "-Header", ""),
+    ("Hex2Str", 1, "-Record_Type", ""),
+    (DATA_UINT8, 1, "Record_Counter", ""),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell01", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell02", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell03", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell04", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell05", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell06", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell07", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell08", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell09", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell10", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell11", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell12", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell13", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell14", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell15", "V"),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell16", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell17", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell18", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell19", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell20", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell21", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell22", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell23", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell24", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell25", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell26", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell27", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell28", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell29", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell30", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell31", "V"),
+    (DATA_UINT16_DIV1000, 2, "-VoltageCell32", "V"),
     ("Hex2Str", 4, "EnabledCellsBitmask", ""), #0xFF000000 => 8 cells, 0xFF010000 => 9 cells, ..., 0xFFFF0000 => 16cells
-    ("LittleHex2Short:r/1000", 2, "AverageCellVoltage", "V"),
-    ("LittleHex2Short:r/1000", 2, "DeltaCellVoltage", "V"),
-    ("LittleHex2Short:r/1000", 2, "CurrentBalancer", "A"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell01", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell02", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell03", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell04", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell05", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell06", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell07", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell08", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell09", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell10", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell11", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell12", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell13", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell14", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell15", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "ResistanceCell16", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell17", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell18", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell19", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell20", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell21", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell22", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell23", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell24", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell25", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell26", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell27", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell28", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell29", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell30", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell31", "Ohm"),
-    ("LittleHex2Short:r/1000", 2, "-ResistanceCell32", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "AverageCellVoltage", "V"),
+    (DATA_UINT16_DIV1000, 2, "DeltaCellVoltage", "V"),
+    (DATA_UINT16_DIV1000, 2, "CurrentBalancer", "A"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell01", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell02", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell03", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell04", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell05", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell06", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell07", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell08", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell09", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell10", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell11", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell12", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell13", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell14", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell15", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell16", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell17", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell18", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell19", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell20", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell21", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell22", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell23", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell24", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell25", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell26", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell27", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell28", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell29", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell30", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell31", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "-ResistanceCell32", "Ohm"),
     ("Hex2Str", 6, "-discard2", ""),
-    ("LittleHex2UInt:r/1000", 4, "BatteryVoltage", "V"),
-    ("LittleHex2UInt:r/1000", 4, "BatteryPower", "W"),
-    ("LittleHex2Int:r/1000", 4, "BalanceCurrent", "A"),  # signed int32
+    (DATA_UINT32_DIV1000, 4, "BatteryVoltage", "V"),
+    (DATA_UINT32_DIV1000, 4, "BatteryPower", "W"),
+    (DATA_INT32_DIV1000, 4, "BalanceCurrent", "A"),  # signed int32
     # ("discard", 8, "discard3", ""),
-    ("LittleHex2Short:r/10", 2, "BatteryT1", "°C"),
-    ("LittleHex2Short:r/10", 2, "BatteryT2", "°C"),
-    ("LittleHex2Short:r/10", 2, "MOSTemp", "°C"),
+    (DATA_INT16_DIV10, 2, "BatteryT1", "C"),
+    (DATA_INT16_DIV10, 2, "BatteryT2", "C"),
+    (DATA_INT16_DIV10, 2, "MOSTemp", "C"),
     ("Hex2Str", 2, "-Unknown3", ""), #0x0001 charge overtemp, 0x0002 charge undertemp. 0x0008 cell undervoltage, 0x0400 cell count error, 0x0800 current sensor anomaly, 0x1000 cell overvoltage
-    ("Hex2Str", 2, "-discard4", ""),  # discard4
-    ("Hex2Str", 1, "-discard4_1", ""),  # added
-    ("Hex2Int", 1, "Percent_Remain", "%"),
-    ("LittleHex2UInt:r/1000", 4, "CapacityRemain", "Ah"),  # Unknown6+7
-    ("LittleHex2UInt:r/1000", 4, "NominalCapacity", "Ah"),  # Unknown8+9
-    ("LittleHex2UInt", 4, "CycleCount", ""),
+    ("discard", 2, "-discard4", ""),  # discard4
+    ("discard", 1, "-discard4_1", ""),  # added
+    (DATA_UINT8, 1, "Percent_Remain", "Pct"),
+    (DATA_UINT32_DIV1000, 4, "CapacityRemain", "Ah"),  # Unknown6+7
+    (DATA_UINT32_DIV1000, 4, "NominalCapacity", "Ah"),  # Unknown8+9
+    (DATA_UINT32, 4, "CycleCount", ""),
     # ("discard", 2, "Unknown10", ""),
     # ("discard", 2, "Unknown11", ""),
-    ("LittleHex2UInt:r/1000", 4, "CycleCapacity", "Ah"),  # Unknown10+11
-    ("Hex2Str", 2, "-Unknown12", ""),
-    ("Hex2Str", 2, "-Unknown13", ""),
-    ("uptime", 3, "Time", ""),
-    ("Hex2Str", 2, "-Unknown15", ""),
-    ("Hex2Str", 2, "-Unknown16", ""),
-    ("Hex2Str", 2, "-Unknown17", ""),
-    ("Hex2Str", 12, "-discard6", ""),
-    ("Hex2Str", 2, "-Unknown18", ""),
-    ("Hex2Str", 2, "-Unknown19", ""),
-    ("Hex2Str", 2, "-Unknown20", ""),
-    ("LittleHex2Short:r/1000", 2, "CurrentCharge", "A"),  # Unknown21
-    ("LittleHex2Short:r/1000", 2, "CurrentDischarge", "A"),  # Unknown22
-    ("Hex2Str", 2, "-Unknown23", ""),
-    ("Hex2Str", 2, "-Unknown24", ""),
-    ("Hex2Str", 2, "-Unknown25", ""),
-    ("Hex2Str", 2, "-Unknown26", ""),
-    ("Hex2Str", 2, "-Unknown27", ""),
-    ("Hex2Str", 2, "-Unknown28", ""),
-    ("Hex2Str", 2, "-Unknown29", ""),
-    ("Hex2Str", 4, "-Unknown30", ""),
-    ("Hex2Str", 4, "-Unknown31", ""),
-    ("Hex2Str", 4, "-Unknown32", ""),
-    ("Hex2Str", 4, "-Unknown33", ""),
-    ("Hex2Str", 4, "-Unknown34", ""),
-    ("Hex2Str", 4, "-Unknown35", ""),
-    ("Hex2Str", 4, "-Unknown36", ""),
-    ("Hex2Str", 4, "-Unknown37", ""),
-    ("Hex2Str", 4, "-Unknown38", ""),
-    ("Hex2Str", 4, "-Unknown39", ""),
-    ("Hex2Str", 4, "-Unknown40", ""),
-    ("Hex2Str", 4, "-Unknown41", ""),
+    (DATA_UINT32_DIV1000, 4, "CycleCapacity", "Ah"),  # Unknown10+11
+    ("discard", 2, "-Unknown12", ""),
+    ("discard", 2, "-Unknown13", ""),
+    ("uptime", 3, "Uptime", "s"),
+    ("discard", 2, "-Unknown15", ""),
+    ("discard", 2, "-Unknown16", ""),
+    ("discard", 2, "-Unknown17", ""),
+    ("discard", 12, "-discard6", ""),
+    ("discard", 2, "-Unknown18", ""),
+    ("discard", 2, "-Unknown19", ""),
+    ("discard", 2, "-Unknown20", ""),
+    (DATA_UINT16_DIV1000, 2, "CurrentCharge", "A"),  # Unknown21
+    (DATA_UINT16_DIV1000, 2, "CurrentDischarge", "A"),  # Unknown22
+    ("discard", 2, "-Unknown23", ""),
+    ("discard", 2, "-Unknown24", ""),
+    ("discard", 2, "-Unknown25", ""),
+    ("discard", 2, "-Unknown26", ""),
+    ("discard", 2, "-Unknown27", ""),
+    ("discard", 2, "-Unknown28", ""),
+    ("discard", 2, "-Unknown29", ""),
+    ("discard", 4, "-Unknown30", ""),
+    ("discard", 4, "-Unknown31", ""),
+    ("discard", 4, "-Unknown32", ""),
+    ("discard", 4, "-Unknown33", ""),
+    ("discard", 4, "-Unknown34", ""),
+    ("discard", 4, "-Unknown35", ""),
+    ("discard", 4, "-Unknown36", ""),
+    ("discard", 4, "-Unknown37", ""),
+    ("discard", 4, "-Unknown38", ""),
+    ("discard", 4, "-Unknown39", ""),
+    ("discard", 4, "-Unknown40", ""),
+    ("discard", 4, "-Unknown41", ""),
     ("discard", 45, "-UnknownXX", ""),
 ]
 
@@ -194,7 +194,7 @@ class jkBmsDelegate(btle.DefaultDelegate):
     '''
     BLE delegate to deal with notifications (information) from the JKBMS device
     '''
-    # JSBMS hat bei getCellInfo 0x02 und bei getInfo 0x03
+    # JKBMS hat bei getCellInfo 0x02 und bei getInfo 0x03
     def __init__(self, jkbms):
         btle.DefaultDelegate.__init__(self)
         # extra initialisation here
@@ -222,129 +222,13 @@ class jkBmsDelegate(btle.DefaultDelegate):
             # check the crc/checksum is correct for the record data
             crc = ord(self.notificationData[-1:])
             calcCrc = crc8(self.notificationData[:-1])
-            print (crc, calcCrc, "len ", len(self.notificationData))
-            print(hexdump(self.notificationData))
+            log.debug (crc, calcCrc, "len ", len(self.notificationData))
+            log.debug(hexdump(self.notificationData))
             if crc == calcCrc:
                 log.debug("Record CRC is valid")
                 return True
         return False
 
-    def processInfoRecord(self, record):
-        log.info('Processing info record')
-        del record[0:5]
-        counter = record.pop(0)
-        log.info('Record number: {}'.format(counter))
-        vendorID = bytearray()
-        hardwareVersion = bytearray()
-        softwareVersion = bytearray()
-        uptime = 0
-        powerUpTimes = 0
-        deviceName = bytearray()
-        passCode = bytearray()
-        # start at byte 7, go till 0x00 for device model
-        while len(record) > 0:
-            _int = record.pop(0)
-            # print (_int)
-            if _int == 0x00:
-                break
-            else:
-                vendorID += bytes(_int.to_bytes(1, byteorder='big'))
-        # consume remaining null bytes
-        _int = record.pop(0)
-        while _int == 0x00:
-            _int = record.pop(0)
-        # process hardware version
-        hardwareVersion += bytes(_int.to_bytes(1, byteorder='big'))
-        while len(record) > 0:
-            _int = record.pop(0)
-            # print (_int)
-            if _int == 0x00:
-                break
-            else:
-                hardwareVersion += bytes(_int.to_bytes(1, byteorder='big'))
-        # consume remaining null bytes
-        _int = record.pop(0)
-        while _int == 0x00:
-            _int = record.pop(0)
-        # process software version
-        softwareVersion += bytes(_int.to_bytes(1, byteorder='big'))
-        while len(record) > 0:
-            _int = record.pop(0)
-            # print (_int)
-            if _int == 0x00:
-                break
-            else:
-                softwareVersion += bytes(_int.to_bytes(1, byteorder='big'))
-        # consume remaining null bytes
-        _int = record.pop(0)
-        while _int == 0x00:
-            _int = record.pop(0)
-        # process uptime version
-        upTimePos = 0
-        uptime = _int * 256**upTimePos
-        while len(record) > 0:
-            _int = record.pop(0)
-            upTimePos += 1
-            # print (_int)
-            if _int == 0x00:
-                break
-            else:
-                uptime += _int * 256**upTimePos
-        # consume remaining null bytes
-        _int = record.pop(0)
-        while _int == 0x00:
-            _int = record.pop(0)
-        # power up times
-        powerUpTimes = _int
-        # consume remaining null bytes
-        _int = record.pop(0)
-        while _int == 0x00:
-            _int = record.pop(0)
-        # device name
-        deviceName += bytes(_int.to_bytes(1, byteorder='big'))
-        while len(record) > 0:
-            _int = record.pop(0)
-            # print (_int)
-            if _int == 0x00:
-                break
-            else:
-                deviceName += bytes(_int.to_bytes(1, byteorder='big'))
-        # consume remaining null bytes
-        _int = record.pop(0)
-        while _int == 0x00:
-            _int = record.pop(0)
-        # Passcode
-        passCode += bytes(_int.to_bytes(1, byteorder='big'))
-        while len(record) > 0:
-            _int = record.pop(0)
-            # print (_int)
-            if _int == 0x00:
-                break
-            else:
-                passCode += bytes(_int.to_bytes(1, byteorder='big'))
-
-        log.info('VendorID: {}'.format(vendorID.decode('utf-8')))
-        publish({'VendorID': vendorID.decode('utf-8')}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        log.info('Device Name: {}'.format(deviceName.decode('utf-8')))
-        publish({'DeviceName': deviceName.decode('utf-8')}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        log.debug('Pass Code: {}'.format(passCode.decode('utf-8')))
-        # publish({'PassCode': passCode.decode('utf-8')}, format=self.jkbms.format, broker=self.jkbms.mqttBroker)
-        log.info('Hardware Version: {}'.format(hardwareVersion.decode('utf-8')))
-        publish({'HardwareVersion': hardwareVersion.decode('utf-8')}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        log.info('Software Version: {}'.format(softwareVersion.decode('utf-8')))
-        publish({'SoftwareVersion': softwareVersion.decode('utf-8')}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        daysFloat = uptime / (60 * 60 * 24)
-        days = math.trunc(daysFloat)
-        hoursFloat = (daysFloat - days) * 24
-        hours = math.trunc(hoursFloat)
-        minutesFloat = (hoursFloat - hours) * 60
-        minutes = math.trunc(minutesFloat)
-        secondsFloat = (minutesFloat - minutes) * 60
-        seconds = math.trunc(secondsFloat)
-        log.info('Uptime: {}D{}H{}M{}S'.format(days, hours, minutes, seconds))
-        publish({'Uptime': '{}D{}H{}M{}S'.format(days, hours, minutes, seconds)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
-        log.info('Power Up Times: {}'.format(powerUpTimes))
-        publish({'Power Up Times: {}'.format(powerUpTimes)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=self.jkbms.tag)
 
     def processExtendedRecord(self, record):
         log.info('Processing extended record')
@@ -353,32 +237,33 @@ class jkBmsDelegate(btle.DefaultDelegate):
         log.info('Record number: {}'.format(counter))
 
 
-    def processField(self,record,fmt,bytes,name,unit):
+    def processField(self,record,fmt,bytes,topic,name,unit):
         value = None
         if fmt == "Hex2Str":
             value = Hex2Str(record[0:bytes])
-        elif fmt == "LittleHex2Short:r/1000":
-            value =LittleHex2Short(record[0:bytes])/1000
-        elif fmt == "LittleHex2Short:r/10":
-            value =LittleHex2Short(record[0:bytes])/10
-        elif fmt == "Hex2Int":
-            value = Hex2Int(record[0:bytes])
-        elif fmt == "LittleHex2UInt":
-            value = LittleHex2UInt(record[0:bytes])
-        elif fmt == "LittleHex2UInt:r/1000":
-            value = LittleHex2UInt(record[0:bytes])/1000
-        elif fmt == "LittleHex2Int:r/1000":
-            value = LittleHex2Int(record[0:bytes])/1000
+        elif fmt == "discard":
+            return []
         elif fmt == "uptime":
             value = uptime(record[0:bytes])
+        elif fmt == DATA_ASCII:
+            value = Hex2Ascii(record[0:bytes])
         else:
-            log.warn('Unknown format {}'.format(fmt))
+            fmt_split = fmt.split(":")
+            value = DecodeFormat(fmt_split[0], record[0:bytes]);
+            if len(fmt_split)>1 and fmt_split[1] == "r/1000":
+                value /= 1000
+            if len(fmt_split)>1 and fmt_split[1] == "r/10":
+                value /= 10
+
 
         msgs = []
-        topic = self.jkbms.tag+'/'+name+'/value'
+        topic = self.jkbms.tag+'/'+topic+'/'+name
+        if (unit):
+            topic+='_'+unit
+
         if(type(value) is int):
-            log.info('{}: {:02d}{}'.format(name, value, unit))
-            msgs.append( {'topic': topic, 'payload': '{:02d}'.format(value)} )
+            log.info('{}: {:2d}{}'.format(name, value, unit))
+            msgs.append( {'topic': topic, 'payload': '{:d}'.format(value)} )
 #            msgs.append(publish({'{:02d}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
         elif(type(value) is float):
             msgs.append( {'topic': topic, 'payload': '{:.3f}'.format(value)} )
@@ -389,11 +274,6 @@ class jkBmsDelegate(btle.DefaultDelegate):
             log.info('{}: {}{}'.format(name, value, unit))
 #            msgs.append(publish({'{}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
         
-        if(len(msgs)>0):
-            topic = self.jkbms.tag+'/'+name+'/unit'
-            msgs.append( {'topic': topic, 'payload': '{}'.format(unit)} )
-#            msgs.append(publish({'{}'.format(unit)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
-
         if(name[0]!='-'):
             return msgs
         else:
@@ -405,12 +285,22 @@ class jkBmsDelegate(btle.DefaultDelegate):
         log.info('Record length {}'.format(len(record)))
         msgs = []
         for fmt,bytes,name,unit in CellInfoResponseMapping:
-            msgs += self.processField(record,fmt,bytes,name,unit)
+            msgs += self.processField(record,fmt,bytes,"CellData",name,unit)
             del record[0:bytes]
 
         print(msgs)
         publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
 
+    def processInfoRecord(self, record):
+        log.info('Processing cell data record')
+        log.info('Record length {}'.format(len(record)))
+        msgs = []
+        for fmt,bytes,name,unit in InfoResponseMapping:
+            msgs += self.processField(record,fmt,bytes,"Info",name,unit)
+            del record[0:bytes]
+
+        print(msgs)
+        publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
 
 
     def processRecord(self, record):
