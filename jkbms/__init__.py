@@ -91,6 +91,7 @@ def main():
             if "SETUP" in config:
                 mqtt_broker = config["SETUP"].get("mqtt_broker", fallback=None)
                 records = config["SETUP"].getint("records", fallback=1)
+                recordDivider = config["SETUP"].getint("record_divider", fallback=1)
                 logging_level = config["SETUP"].getint(
                     "logging_level", fallback=logging.CRITICAL
                 )
@@ -142,6 +143,7 @@ def main():
                 tag=tag,
                 format=format,
                 records=records,
+                recordDivider=recordDivider,
                 maxConnectionAttempts=max_connection_attempts,
                 mqttBroker=mqtt_broker,
             )

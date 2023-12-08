@@ -62,6 +62,8 @@ class jkBmsDelegate(btle.DefaultDelegate):
         print('Delegate {}'.format(str(jkbms)))
         self.notificationData = bytearray()
         self.record_type = None
+        self.record_counter = 0
+        self.rx_counter = 0
 
 
     def is_record_start(self, record):
@@ -143,13 +145,18 @@ class jkBmsDelegate(btle.DefaultDelegate):
     def processCellDataRecord(self, record):
         log.info('Processing cell data record')
         log.info('Record length {}'.format(len(record)))
+        self.rx_counter += 1
         msgs = []
         for fmt,bytes,name,unit in CellInfoResponseMapping:
             msgs += self.processField(record,fmt,bytes,"CellData",name,unit)
             del record[0:bytes]
 
-        log.debug(msgs)
-        publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
+        if self.rx_counter == self.jkbms.recordDivider:
+            self.rx_counter = 0
+            self.record_counter += 1
+            log.debug(msgs)
+            publishToMqtt.multiple(msgs, hostname=self.jkbms.mqttBroker)
+            log.info("MQTT sent")
 
     def processInfoRecord(self, record):
         log.info('Processing cell data record')
@@ -224,7 +231,7 @@ class jkBMS:
     def __str__(self):
         return 'JKBMS instance --- name: {}, model: {}, mac: {}, command: {}, tag: {}, format: {}, records: {}, maxConnectionAttempts: {}, mqttBroker: {}'.format(self.name, self.model, self.mac, self.command, self.tag, self.format, self.records, self.maxConnectionAttempts, self.mqttBroker)
 
-    def __init__(self, name, model, mac, command, tag, format, records=1, maxConnectionAttempts=3, mqttBroker=None):
+    def __init__(self, name, model, mac, command, tag, format, records=1, recordDivider=1, maxConnectionAttempts=3, mqttBroker=None):
         '''
         '''
         self.name = name
@@ -233,6 +240,7 @@ class jkBMS:
         self.command = command
         self.tag = tag
         self.format = format
+        self.recordDivider = recordDivider
         try:
             self.records = int(records)
         except Exception:
@@ -302,11 +310,11 @@ class jkBMS:
         log.info('Write getCellInfo to read handle', self.device.writeCharacteristic(handleRead, getCellInfo))
         loops = 0
         recordsToGrab = self.records
-        log.info('Grabbing {} records (after inital response)'.format(recordsToGrab))
+        log.info('Grabbing {} (every {}th) records (after inital response)'.format(recordsToGrab, self.recordDivider))
 
         while True:
             loops += 1
-            if loops > recordsToGrab:
+            if self.delegate.record_counter >= recordsToGrab:
                 log.info('Got {} records'.format(recordsToGrab))
                 break
             if self.device.waitForNotifications(1.0):

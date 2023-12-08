@@ -1,7 +1,13 @@
 [SETUP]
 mqtt_broker = mqtthost
 max_connection_attempts = 3
-records = 1
+
+# Every n-th CellData record will be processed
+record_divider = 5
+
+# Number of records that shall be processed at a time (typ 1 rec/s with record_divider=1)
+records = 720
+
 # Uncomment one of the logging_level lines
 # All messages at the uncommented level and higher will be displayed
 # i.e. DEBUG gives the most output and CRITICAL gives the least
