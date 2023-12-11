@@ -7,7 +7,7 @@ from .publishMqtt import publishMqtt as publish
 from struct import unpack
 import paho.mqtt.publish as publishToMqtt
 
-from .jkbmsdecode import DATA_ASCII, DATA_INT16, DATA_INT16_DIV10, DATA_INT32_DIV1000, DATA_UINT16, DATA_UINT16_DIV1000, DATA_UINT32, DATA_UINT32_DIV1000, DATA_UINT8, DecodeFormat, Hex2Ascii, crc8, Hex2Str, Hex2Int, LittleHex2UInt, LittleHex2Int, uptime
+from .jkbmsdecode import DATA_ASCII, DecodeFormat, Hex2Ascii, crc8, Hex2Str, uptime
 
 class hexdump:
     def __init__(self, buf, off=0):
