@@ -103,7 +103,7 @@ CellInfoResponseMapping = [
     ("Hex2Str", 2, "-Unknown3", ""), #0x0001 charge overtemp, 0x0002 charge undertemp. 0x0008 cell undervoltage, 0x0400 cell count error, 0x0800 current sensor anomaly, 0x1000 cell overvoltage
     ("discard", 2, "-discard4", ""),  # discard4
     ("discard", 1, "-discard4_1", ""),  # added
-    (DATA_UINT8, 1, "Percent_Remain", "Pct"),
+    (DATA_UINT8, 1, "PercentRemain", "Pct"),
     (DATA_UINT32_DIV1000, 4, "CapacityRemain", "Ah"),  # Unknown6+7
     (DATA_UINT32_DIV1000, 4, "NominalCapacity", "Ah"),  # Unknown8+9
     (DATA_UINT32, 4, "CycleCount", ""),
