@@ -27,7 +27,7 @@ logging.basicConfig()
 config = configparser.ConfigParser()
 
 
-def main():
+def main(daemon=False):
     parser = ArgumentParser(
         description="JKBMS Utility, version: {}".format(__version__)
     )
@@ -146,6 +146,7 @@ def main():
                 recordDivider=recordDivider,
                 maxConnectionAttempts=max_connection_attempts,
                 mqttBroker=mqtt_broker,
+                daemon=daemon
             )
             log.debug(str(jk))
             if jk.connect():

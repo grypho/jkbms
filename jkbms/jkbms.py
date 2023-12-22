@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from bluepy import btle
 import logging
+import systemd.daemon
 
 from .jkbms_mapping import CellInfoResponseMapping, InfoResponseMapping
 from .publishMqtt import publishMqtt as publish
-from struct import unpack
 import paho.mqtt.publish as publishToMqtt
 
 from .jkbmsdecode import DATA_ASCII, DecodeFormat, Hex2Ascii, crc8, Hex2Str, uptime
@@ -126,15 +126,12 @@ class jkBmsDelegate(btle.DefaultDelegate):
         if(type(value) is int):
             log.info('{}: {:2d}{}'.format(name, value, unit))
             msgs.append( {'topic': topic, 'payload': '{:d}'.format(value)} )
-#            msgs.append(publish({'{:02d}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
         elif(type(value) is float):
             msgs.append( {'topic': topic, 'payload': '{:.3f}'.format(value)} )
             log.info('{}: {:.3f}{}'.format(name, value, unit))
-#            msgs.append(publish({'{:.3f}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
         elif(type(value) is str):
             msgs.append( {'topic': topic, 'payload': '{}'.format(value)} )
             log.info('{}: {}{}'.format(name, value, unit))
-#            msgs.append(publish({'{}'.format(value)}, format=self.jkbms.format, broker=self.jkbms.mqttBroker, tag=topic))
         
         if(name[0]!='-'):
             return msgs
@@ -172,6 +169,9 @@ class jkBmsDelegate(btle.DefaultDelegate):
 
     def processRecord(self, record):
         recordType = record[4]
+        if self.jkbms.isDaemon:
+            systemd.daemon.notify('WATCHDOG=1')
+
         # counter = record[5]
         if recordType == INFO_RECORD:
             self.processInfoRecord(record)
@@ -190,9 +190,7 @@ class jkBmsDelegate(btle.DefaultDelegate):
         log.debug(f"Pre wipe to start {self.notificationData}")
         self.notificationData = self.wipe_to_start(self.notificationData)
         log.debug(f"Post wipe to start {self.notificationData}")
-        # if not self._protocol.is_record_start(self.notificationData):
-        #     log.debug(f"Not valid start of record - wiping data {self.notificationData}")
-        #     self.notificationData = bytearray()
+
         if not self.is_record_correct_type(
             self.notificationData, self.record_type
         ):
@@ -231,7 +229,7 @@ class jkBMS:
     def __str__(self):
         return 'JKBMS instance --- name: {}, model: {}, mac: {}, command: {}, tag: {}, format: {}, records: {}, maxConnectionAttempts: {}, mqttBroker: {}'.format(self.name, self.model, self.mac, self.command, self.tag, self.format, self.records, self.maxConnectionAttempts, self.mqttBroker)
 
-    def __init__(self, name, model, mac, command, tag, format, records=1, recordDivider=1, maxConnectionAttempts=3, mqttBroker=None):
+    def __init__(self, name, model, mac, command, tag, format, records=1, recordDivider=1, maxConnectionAttempts=3, mqttBroker=None, daemon=False):
         '''
         '''
         self.name = name
@@ -241,6 +239,7 @@ class jkBMS:
         self.tag = tag
         self.format = format
         self.recordDivider = recordDivider
+        self.isDaemon = daemon
         try:
             self.records = int(records)
         except Exception:
@@ -251,6 +250,7 @@ class jkBMS:
         log.debug('Config data - name: {}, model: {}, mac: {}, command: {}, tag: {}, format: {}'.format(self.name, self.model, self.mac, self.command, self.tag, self.format))
         log.debug('Additional config - records: {}, maxConnectionAttempts: {}, mqttBroker: {}'.format(self.records, self.maxConnectionAttempts, self.mqttBroker))
         print('jkBMS Logging level: {}'.format(log.level))
+        print('daemonize: {}'.format(self.isDaemon))
 
     def connect(self):
         # Intialise BLE device
@@ -310,6 +310,12 @@ class jkBMS:
         log.info('Write getCellInfo to read handle', self.device.writeCharacteristic(handleRead, getCellInfo))
         loops = 0
         recordsToGrab = self.records
+
+        if self.isDaemon:
+            # Tell systemd that our service is ready
+            systemd.daemon.notify('READY=1')
+
+
         log.info('Grabbing {} (every {}th) records (after inital response)'.format(recordsToGrab, self.recordDivider))
 
         while True:
