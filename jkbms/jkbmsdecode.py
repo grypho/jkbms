@@ -18,6 +18,10 @@ DATA_INT32_DIV1000 = DATA_INT32 + DIV1000
 
 DATA_ASCII = "ASCII"
 
+EVERY5TH = 5
+EVERY10TH = 10
+EVERY60TH = 60
+
 def crc8(byteData):
     '''
     Generate 8 bit CRC of supplied string

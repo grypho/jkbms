@@ -1,4 +1,4 @@
-from .jkbmsdecode import DATA_ASCII, DATA_INT16_DIV10, DATA_INT32_DIV1000, DATA_UINT16_DIV1000, DATA_UINT32, DATA_UINT32_DIV1000, DATA_UINT8
+from .jkbmsdecode import DATA_ASCII, DATA_INT16_DIV10, DATA_INT32_DIV1000, DATA_UINT16_DIV1000, DATA_UINT32, DATA_UINT32_DIV1000, DATA_UINT8, EVERY5TH,EVERY10TH, EVERY60TH
 
 
 InfoResponseMapping = [
@@ -23,8 +23,8 @@ InfoResponseMapping = [
 CellInfoResponseMapping = [
     ("Hex2Str", 4, "-Header", ""),
     ("Hex2Str", 1, "-Record_Type", ""),
-    (DATA_UINT8, 1, "Record_Counter", ""),
-    (DATA_UINT16_DIV1000, 2, "VoltageCell01", "V"),
+    (DATA_UINT8, 1, "Record_Counter", "", EVERY60TH),
+    (DATA_UINT16_DIV1000, 2, "VoltageCell01", "V", EVERY5TH),
     (DATA_UINT16_DIV1000, 2, "VoltageCell02", "V"),
     (DATA_UINT16_DIV1000, 2, "VoltageCell03", "V"),
     (DATA_UINT16_DIV1000, 2, "VoltageCell04", "V"),
@@ -56,26 +56,26 @@ CellInfoResponseMapping = [
     (DATA_UINT16_DIV1000, 2, "-VoltageCell30", "V"),
     (DATA_UINT16_DIV1000, 2, "-VoltageCell31", "V"),
     (DATA_UINT16_DIV1000, 2, "-VoltageCell32", "V"),
-    ("Hex2Str", 4, "EnabledCellsBitmask", ""), #0xFF000000 => 8 cells, 0xFF010000 => 9 cells, ..., 0xFFFF0000 => 16cells
+    ("Hex2Str", 4, "EnabledCellsBitmask", "", EVERY60TH), #0xFF000000 => 8 cells, 0xFF010000 => 9 cells, ..., 0xFFFF0000 => 16cells
     (DATA_UINT16_DIV1000, 2, "AverageCellVoltage", "V"),
     (DATA_UINT16_DIV1000, 2, "DeltaCellVoltage", "V"),
     (DATA_UINT16_DIV1000, 2, "CurrentBalancer", "A"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell01", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell02", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell03", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell04", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell05", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell06", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell07", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell08", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell09", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell10", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell11", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell12", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell13", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell14", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell15", "Ohm"),
-    (DATA_UINT16_DIV1000, 2, "ResistanceCell16", "Ohm"),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell01", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell02", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell03", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell04", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell05", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell06", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell07", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell08", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell09", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell10", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell11", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell12", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell13", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell14", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell15", "Ohm",EVERY10TH),
+    (DATA_UINT16_DIV1000, 2, "ResistanceCell16", "Ohm",EVERY10TH),
     (DATA_UINT16_DIV1000, 2, "-ResistanceCell17", "Ohm"),
     (DATA_UINT16_DIV1000, 2, "-ResistanceCell18", "Ohm"),
     (DATA_UINT16_DIV1000, 2, "-ResistanceCell19", "Ohm"),
@@ -97,19 +97,19 @@ CellInfoResponseMapping = [
     (DATA_UINT32_DIV1000, 4, "BatteryPower", "W"),
     (DATA_INT32_DIV1000, 4, "BalanceCurrent", "A"),  # signed int32
     # ("discard", 8, "discard3", ""),
-    (DATA_INT16_DIV10, 2, "BatteryT1", "C"),
-    (DATA_INT16_DIV10, 2, "BatteryT2", "C"),
-    (DATA_INT16_DIV10, 2, "MOSTemp", "C"),
+    (DATA_INT16_DIV10, 2, "BatteryT1", "C", EVERY60TH),
+    (DATA_INT16_DIV10, 2, "BatteryT2", "C", EVERY60TH),
+    (DATA_INT16_DIV10, 2, "MOSTemp", "C", EVERY60TH),
     ("Hex2Str", 2, "-Unknown3", ""), #0x0001 charge overtemp, 0x0002 charge undertemp. 0x0008 cell undervoltage, 0x0400 cell count error, 0x0800 current sensor anomaly, 0x1000 cell overvoltage
     ("discard", 2, "-discard4", ""),  # discard4
     ("discard", 1, "-discard4_1", ""),  # added
-    (DATA_UINT8, 1, "PercentRemain", "Pct"),
-    (DATA_UINT32_DIV1000, 4, "CapacityRemain", "Ah"),  # Unknown6+7
-    (DATA_UINT32_DIV1000, 4, "NominalCapacity", "Ah"),  # Unknown8+9
-    (DATA_UINT32, 4, "CycleCount", ""),
+    (DATA_UINT8, 1, "PercentRemain", "Pct", EVERY5TH),
+    (DATA_UINT32_DIV1000, 4, "CapacityRemain", "Ah", EVERY5TH),  # Unknown6+7
+    (DATA_UINT32_DIV1000, 4, "NominalCapacity", "Ah", EVERY60TH),  # Unknown8+9
+    (DATA_UINT32, 4, "CycleCount", "", EVERY60TH),
     # ("discard", 2, "Unknown10", ""),
     # ("discard", 2, "Unknown11", ""),
-    (DATA_UINT32_DIV1000, 4, "CycleCapacity", "Ah"),  # Unknown10+11
+    (DATA_UINT32_DIV1000, 4, "CycleCapacity", "Ah", EVERY60TH),  # Unknown10+11
     ("discard", 2, "-Unknown12", ""),
     ("discard", 2, "-Unknown13", ""),
     ("uptime", 3, "Uptime", "s"),

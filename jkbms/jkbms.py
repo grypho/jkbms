@@ -2,6 +2,7 @@
 from bluepy import btle
 import logging
 import systemd.daemon
+import time
 
 from .jkbms_mapping import CellInfoResponseMapping, InfoResponseMapping
 from .publishMqtt import publishMqtt as publish
@@ -84,8 +85,8 @@ class jkBmsDelegate(btle.DefaultDelegate):
             # check the crc/checksum is correct for the record data
             crc = ord(self.notificationData[-1:])
             calcCrc = crc8(self.notificationData[:-1])
-            log.debug (crc, calcCrc, "len ", len(self.notificationData))
-            log.debug(hexdump(self.notificationData))
+            #log.debug (crc, calcCrc, "len ", len(self.notificationData))
+            #log.debug(hexdump(self.notificationData))
             if crc == calcCrc:
                 log.debug("Record CRC is valid")
                 return True
@@ -144,8 +145,16 @@ class jkBmsDelegate(btle.DefaultDelegate):
         log.info('Record length {}'.format(len(record)))
         self.rx_counter += 1
         msgs = []
-        for fmt,bytes,name,unit in CellInfoResponseMapping:
-            msgs += self.processField(record,fmt,bytes,"CellData",name,unit)
+        # *opts is a catchall for all remaining arguments
+        # opts is an empty list if there is no 5th argument and evaluate to false.
+
+        for fmt,bytes,name,unit,*opts in CellInfoResponseMapping:
+            mqttFrequency = opts[0] if opts else 1
+            if self.record_counter % mqttFrequency == 0:        
+#                print('* {}'.format(name))
+                msgs += self.processField(record,fmt,bytes,"CellData",name,unit)
+#            else:
+#                print('_ {}'.format(name))
             del record[0:bytes]
 
         if self.rx_counter == self.jkbms.recordDivider:
@@ -253,6 +262,8 @@ class jkBMS:
         print('daemonize: {}'.format(self.isDaemon))
 
     def connect(self):
+        if self.isDaemon:
+            time.sleep(10)
         # Intialise BLE device
         self.device = btle.Peripheral(None)
         self.delegate = jkBmsDelegate(self)
@@ -320,7 +331,7 @@ class jkBMS:
 
         while True:
             loops += 1
-            if self.delegate.record_counter >= recordsToGrab:
+            if self.delegate.record_counter >= recordsToGrab and not self.isDaemon:
                 log.info('Got {} records'.format(recordsToGrab))
                 break
             if self.device.waitForNotifications(1.0):
@@ -329,3 +340,6 @@ class jkBMS:
     def disconnect(self):
         log.info('Disconnecting...')
         self.device.disconnect()
+        if self.isDaemon:
+            time.sleep(10)
+            
