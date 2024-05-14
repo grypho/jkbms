@@ -100,7 +100,7 @@ class jkBmsDelegate(btle.DefaultDelegate):
         log.info('Record number: {}'.format(counter))
 
 
-    def processField(self,record,fmt,bytes,topic,name,unit):
+    def convertField(self,record,fmt,bytes,topic,name,unit):
         value = None
         if fmt == "Hex2Str":
             value = Hex2Str(record[0:bytes])
@@ -118,7 +118,10 @@ class jkBmsDelegate(btle.DefaultDelegate):
             if len(fmt_split)>1 and fmt_split[1] == "r/10":
                 value /= 10
 
+        return value
 
+
+    def sendField(self,value,topic,name,unit):
         msgs = []
         topic = self.jkbms.tag+'/'+topic+'/'+name
         if (unit):
@@ -138,24 +141,35 @@ class jkBmsDelegate(btle.DefaultDelegate):
             return msgs
         else:
             return []
-
-
+        
     def processCellDataRecord(self, record):
         log.info('Processing cell data record')
         log.info('Record length {}'.format(len(record)))
         self.rx_counter += 1
-        msgs = []
+        fields = {}
         # *opts is a catchall for all remaining arguments
         # opts is an empty list if there is no 5th argument and evaluate to false.
 
         for fmt,bytes,name,unit,*opts in CellInfoResponseMapping:
             mqttFrequency = opts[0] if opts else 1
-            if self.record_counter % mqttFrequency == 0:        
+            if (self.record_counter % mqttFrequency == 0) and (name[0]!='-'):
 #                print('* {}'.format(name))
-                msgs += self.processField(record,fmt,bytes,"CellData",name,unit)
+                fields[name] = self.convertField(record,fmt,bytes,"CellData",name,unit)
 #            else:
 #                print('_ {}'.format(name))
             del record[0:bytes]
+
+        # Field BatteryPower uses only absolute values. Using BatteryCurrent to provide power direction
+        if(fields["BatteryCurrent"] < 0):
+            fields["BatteryPower"] = -fields["BatteryPower"]
+
+
+        msgs = []
+        for fmt,bytes,name,unit,*opts in CellInfoResponseMapping:
+            mqttFrequency = opts[0] if opts else 1
+            if (self.record_counter % mqttFrequency == 0) and (name[0]!='-'):
+                msgs += self.sendField(fields[name],"CellData",name,unit)
+
 
         if self.rx_counter == self.jkbms.recordDivider:
             self.rx_counter = 0
@@ -169,7 +183,8 @@ class jkBmsDelegate(btle.DefaultDelegate):
         log.info('Record length {}'.format(len(record)))
         msgs = []
         for fmt,bytes,name,unit in InfoResponseMapping:
-            msgs += self.processField(record,fmt,bytes,"Info",name,unit)
+            value = self.convertField(record,fmt,bytes,"CellData",name,unit)
+            msgs += self.sendField(value,"CellData",name,unit)
             del record[0:bytes]
 
         log.debug(msgs)
