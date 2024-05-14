@@ -95,7 +95,7 @@ CellInfoResponseMapping = [
     ("Hex2Str", 6, "-discard2", ""),
     (DATA_UINT32_DIV1000, 4, "BatteryVoltage", "V"),
     (DATA_UINT32_DIV1000, 4, "BatteryPower", "W"),
-    (DATA_INT32_DIV1000, 4, "BalanceCurrent", "A"),  # signed int32
+    (DATA_INT32_DIV1000, 4, "BatteryCurrent", "A"),  # signed int32, positive: charge, negative: discharge
     # ("discard", 8, "discard3", ""),
     (DATA_INT16_DIV10, 2, "BatteryT1", "C", EVERY60TH),
     (DATA_INT16_DIV10, 2, "BatteryT2", "C", EVERY60TH),
